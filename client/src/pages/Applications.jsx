@@ -1,16 +1,67 @@
  
 
-import React, { useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import Navbar from '../components/Navbar'
 import { assets } from '../assets/assets'
 import { jobsApplied } from '../assets/assets'
 import Footer from '../components/Footer'
 import moment from 'moment'
+import { AppContext } from '../context/AppContext'
+import { useUser } from '@clerk/clerk-react'
+import { toast } from 'react-toastify'
 
 const Applications = () => {
 
+
+  const {user}= useUser()
+  const {getToken}= useAuth()
   const [isEdit,setIsEdit]=useState(false)
   const[resume,setResume]=useState(null)
+
+  const {backendUrl, userData, userApplications, fetchUserData, fetchUserApplications} = userContext(AppContext)
+
+  const updateResume = async ()=> {
+
+    try{
+
+      const formData = new FormData()
+ formData.append('resume', resume )
+ const token = awaitgetToken()
+ 
+ const {data } = await axios.post(backendUrl + '/api/users/update-resume', 
+  formData,
+  {headers: {Authorization : `Bearer ${token}`}}
+ )
+
+ 
+ if (data.success){
+
+  toast.success(data.message)
+  await fetchUserData()
+ }
+ else {
+
+  toast.error(data.message)
+ }
+ 
+    }
+    catch(error){
+toast.error(error.message)
+
+    }
+
+
+    setIsEdit(false)
+    setResume(null)
+  }
+
+  useEffect(()=>{
+
+    if(user){
+      fetchUserApplications
+    }
+
+  }, [user])
   return (
    <>
    <Navbar/>
@@ -19,14 +70,15 @@ const Applications = () => {
     <h2 className='text-xl font-semibold'>Your Resume</h2>
     <div className='flex gap-2 mb-6 mt-3'>
       {
-        isEdit ? 
+        isEdit || userData &&  userData.resume === ""
+        ?
         <>
         <label className='flex items-center' htmlFor='resumeUpload'>
-          <p className='bg-blue-100 text-blue-600 px-4 py-2 rounded-lg mr-2'>Select Resume</p>
+          <p className='bg-blue-100 text-blue-600 px-4 py-2 rounded-lg mr-2'>{resume ? resume.name : "Select resume "}</p>
           <input  id= 'resumeUpload' onChange={e=>setResume(e.target.files[0])}accept='application/pdf'type='file'hidden/>
           <img src={assets.profile_upload_icon} alt=""/>
         </label>
-        <button  onClick={e=>setIsEdit(false)}className='bg-green-100 border border-green-400 rounded-lg px-4 py-2'>Save</button>
+        <button  onClick={updateResume}className='bg-green-100 border border-green-400 rounded-lg px-4 py-2'>Save</button>
          
            {/* to see resume upload */}
           {resume && (
@@ -38,7 +90,7 @@ const Applications = () => {
               )}
             
         </> :<div className='flex gap-2' >
-            <a  className='bg-blue-100 text-blue-600 px-4 py-2 rounded-lg'href=''>Resume</a>
+            <a   target='_blank' className='bg-blue-100 text-blue-600 px-4 py-2 rounded-lg'href={userData.resume}>Resume</a>
         <button onClick={()=>setIsEdit(true)} className='text-gray-500 border border-gray-300 rounded-lg px-4 py-2'>Edit</button></div>
       }
     </div>
@@ -55,14 +107,14 @@ const Applications = () => {
       </tr>
     </thead>
     <tbody className="divide-y divide-gray-200">
-      {jobsApplied.map((job, index) => (
+      {userApplications.map((job, index) => (
         <tr key={index} className="hover:bg-gray-50">
           <td className="px-6 py-4 flex items-center gap-2">
-            <img src={job.logo} alt={job.company} className="w-6 h-6 rounded-full" />
+            <img src={job.companyId.image} alt={job.companyId.name} className="w-6 h-6 rounded-full" />
             {job.company}
           </td>
-          <td className="px-6 py-4">{job.title}</td>
-          <td className="px-6 py-4">{job.location}</td>
+          <td className="px-6 py-4">{job.jobId.title}</td>
+          <td className="px-6 py-4">{job.jobId.location}</td>
           <td className="px-6 py-4">{moment(job.date).format('DD MMM, YYYY')}</td>
           <td className="px-6 py-4">
             <span
