@@ -1,15 +1,4 @@
-// import express from "express";
-// import { getUserData, applyForJob, getUserJobApplications, updateUserResume } 
-//   from "../controllers/userController.js";
 
-// const router = express.Router();
-
-// router.get("/profile", getUserData);
-// router.post("/apply", applyForJob);
-// router.get("/applications", getUserJobApplications);
-// router.put("/resume", updateUserResume);
-
-// export default router;
 
 import express from "express";
 import {
